@@ -264,5 +264,38 @@ plot(1:length(ps), (pss/pss[length(pss)] * 100),
      main = "Percent of Total Variance Captured by Principle Components", 
      xlab = "ith Principle Component", ylab = "Percent of Total Variance Captured", type = "b")
 ```
+![rplot02](https://user-images.githubusercontent.com/43111524/52185617-50eeb900-27ef-11e9-9bc2-12ff2309f8c8.png)
+40 principle components capture around 85% of the total variance, but 60 principle components capture around 95%...
+
+Trial LDA based off of 60 principle components:
+```R
+w <- as.matrix(y) %*% p$rotation[, 1:60]
+l <- lda(w, grouping=b)
+plot(as.matrix(w) %*% l$scaling[, 1:2], col=b)
+legend("topright", levels(b), text.col=1:length(b),
+       fill=1:length(levels(b)))
+```
+![rplot03](https://user-images.githubusercontent.com/43111524/52185618-50eeb900-27ef-11e9-9118-64ac734ff99b.png)
+Clusters are much tighter here!  The rest of this report proceeds evaluating this methodology.
+
+Predicting true authorship of joint or unknown papers:
+```R
+# add documents that are attributed to both Hamilton and Madison
+both <- which(a == "Hamilton and Madison")
+zb <- x[both, ]
+wb <- as.matrix(zb) %*% p$rotation[, 1:60]
+points(as.matrix(wb) %*% l$scaling[, 1:2], col=4)
+# add documents of unknown authorship
+unknown <- which(a == "Hamilton or Madison")
+zu <- x[unknown, ]
+wu <- as.matrix(zu) %*% p$rotation[, 1:60]
+text(wu %*% l$scaling[, 1:2], labels=rownames(wu), col=5)
+### Discussed in class (predict function)
+p <- points(wu %*% l$scaling, col=5, pch="x", cex=2)
+points(wu %*% l$scaling, col=predict(l,wu)$class, cex=3)
+```
+
+
+All 11 papers with unknown authorship are predicted by this methodology to have been written by James Madison
 
 
