@@ -1,8 +1,8 @@
 # Authorship Unknown? A Textual Analysis of the Federalist Papers
 
-##### This analysis seeks to predict the true authors of the Federalist Papers where authorship is currenty contested.  Methods involve scraping the Federalist Papers from the web, consolidating them by authorship, evaluating the frequency of tokens by author, conducting principle components & linear discriminant analysis to generate predictions, and evaluating the confidence of results.  Results suggest with a high degree of confidence that all 11 Federalist Papers with currently contested authorship were in fact writted by James Madison. Below find my full set of code and commentary.
+### This analysis seeks to predict the true authors of the Federalist Papers where authorship is currenty contested.  Methods involve scraping the Federalist Papers from the web, consolidating them by authorship, evaluating the frequency of tokens by author, conducting principle components & linear discriminant analysis to generate predictions, and evaluating the confidence of results.  Results suggest with a high degree of confidence that all 11 Federalist Papers with currently contested authorship were in fact writted by James Madison. Below find my full set of code and commentary.
 
-##### The first part of this analysis was written in Python:
+#### The first part of this analysis is written in Python:
 
 ```Python3
 import requests
@@ -152,3 +152,55 @@ chdir('/Users/dylancicero/Desktop/Data_Analysis/Federalist_Papers')
 path = getcwd()
 df.to_csv('federalist_frequencies.csv')
 ```
+
+#### The second part of this analysis is written in R.
+Read in .csv of frequencies:
+```R
+# Read in the generated csv of token frequencies for each of the 85 Federalist Papers
+# Convert the 'na' values in data matrix to 0
+# Display the first 6 rows and columns
+x <- read.csv('/Users/dylancicero/Desktop/Data_Analysis/Federalist_Papers/federalist_frequencies.csv', row.names=1)
+x[is.na(x)] <- 0
+x[1:6, 1:6]
+# xbar is a vector of the mean of frequencies for a given token across all papers
+xbar <- apply(x, 2, mean)
+# iterate across each row, subtracting the mean for a given token from the frequency value for a given paper
+# (not necessary, but centers the axes around data)
+for(i in 1:nrow(x)) {
+  x[i, ] <- x[i, ] - xbar
+}
+```
+Read in authors:
+```R
+# Read in csv of authors.  Transform it into a vector listing the authors in order from first to last paper.
+a <- read.csv('/Users/dylancicero/Desktop/Data_Analysis/Federalist_Papers/authors.csv')$X0
+# Create a variable "single", a vector of boolean values in order from first to last paper, 
+# where TRUE means that the paper had single authorship.
+single <- a %in% c("Hamilton", "Madison", "Jay")
+# Create a new matrix 'y', extracting the papers (rows) from matrix 'x' for which there is a known single author
+y <- x[single, ]
+# Develop factors for the three single authors, to be used later in analytic charts
+b <- as.factor(as.character(a[single]))
+```
+Conduct principle components analysis and plot the results
+```R
+# PCA (note: prior to conducting pca, units of features should be normalized.  All units here are of the same type- relative
+# frequency- and thus scaling in this case has the undesired effect of reducing overall variance between data points)
+p <- prcomp(y)
+# 'prot' is an output of pca.  Multiplying the original matrix y by a given number of columns in prot 
+# outputs a matrix where the original features are replaced by the same number ^^ of principle components.
+# This represents a rotation of the original axes of the dataframe, whereby the first principle component
+# maximizes variance across all data points, and the second principle component maximizes variance 
+# across all datapoints in a direction orthagonal to the first.
+prot <- (p$rotation)
+
+# Plot the second principle component against the first, colored by authors.
+plot(as.matrix(y) %*% prot[, 1:2], col=b, main = "Principle Components Analysis")
+legend("topleft", levels(b), text.col=1:length(levels(b)),
+       fill=1:length(levels(b)))
+mtext("(means subtracted)", side = 3, adj = 0.5, line = 0.4)
+```
+
+
+
+
