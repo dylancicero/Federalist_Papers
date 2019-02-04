@@ -323,10 +323,10 @@ legend("topright", levels(b.train), text.col=1:length(b.train),
 # Plot the points of the test set colored by predicted authorship
 points(test.proj, col=predict(l, as.matrix(y[leave, ]) %*% p$rotation[, 1:40])$class, cex=3)
 ```
-![rplot05](https://user-images.githubusercontent.com/43111524/52185732-7e883200-27f0-11e9-9281-044250d7e67f.png)
+![rplot06](https://user-images.githubusercontent.com/43111524/52185862-b348b900-27f1-11e9-9055-703ba70abdd3.png)
 All ommitted cases were assigned by the methodology to their correct class
 
-Implement the cross-validation method on numerous test cases.  85% of test cases that were correctly classified by the model 
+Implement the cross-validation method on numerous test cases.  99.2% of test cases were correctly classified by the model 
 ```R
 for (i in 1:100) {
   total <- total + 5
@@ -345,7 +345,117 @@ for (i in 1:100) {
 }
 # 'Confidence' is the proportion of test cases that were correctly classified by the model
 confidence <- correct/total
-print(confidence)
+confidence
 ```
+In the final step, I assess the generalizability of the cross-validation results to classification of documents with unknown authorship.  Here, I evaluate the Mahalanobis distance of the predicted results for papers with unknown authorship against the mahalanobis distance of the predicted results for test cases:
+```R
+# DETERMINE THE MEAN VECTOR AND COVARIANCE MATRIX SIGMA FROM EACH  OF THE SAMPLE DISTRIBUTIONS
+# Isolate the 2D data points (LD1, LD2) for each author
+Hamilton <- a %in% c("Hamilton")
+Madison <- a %in% c("Madison")
+Jay <- a %in% c("Jay")
+y_ham <- x[Hamilton, ]
+y_mad <- x[Madison, ]
+y_jay <- x[Jay, ]
+w_ham <- as.matrix(y_ham) %*% p$rotation[, 1:40]
+w_mad <- as.matrix(y_mad) %*% p$rotation[, 1:40]
+w_jay <- as.matrix(y_jay) %*% p$rotation[, 1:40]
+hamDist <- as.matrix(w_ham) %*% l$scaling[, 1:2]
+madDist <- as.matrix(w_mad) %*% l$scaling[, 1:2]
+jayDist <- as.matrix(w_jay) %*% l$scaling[, 1:2]
+dim(hamDist)
+dim(madDist)
+dim(jayDist)
+# Calculate the mean vector for each author
+for (i in 1:2) {
+  ham_mean <- c(mean(hamDist[,1]), mean(hamDist[,2]))
+  mad_mean <- c(mean(madDist[,1]), mean(madDist[,2]))
+  jay_mean <- c(mean(jayDist[,1]), mean(jayDist[,2]))
+}
+# Calculate the covariance matrix for each author
+ham_cov <- cov(hamDist)
+mad_cov <- cov(madDist)
+jay_cov <- cov(jayDist)
+# Determine Mahalanobis Distance of papers with unknown authorship from their predicted clusters. 
+unknown <- which(a == "Hamilton or Madison")
+zu <- x[unknown, ]
+wu <- as.matrix(zu) %*% p$rotation[, 1:40]
+wuDist <- as.matrix(wu) %*% l$scaling[, 1:2]
+wuDist
+Distances <- c()
+for (i in 1:nrow(wuDist)) {
+  Distances <- append(Distances,t(wuDist[i,]-mad_mean)%*%solve(mad_cov)%*%(wuDist[i,]-mad_mean))
+}
+# 'Distances' is a vector of squared Mahalanobis distances of points with unknown authorship 
+# away from their predicted clusters. (Here, they are all predicted to be part of Madison distribution)
+Distances
+
+
+
+# Determine average Mahalanobis Distance of test cases (20 iterations) away from their actual cluster
+Distances_Mad <- c()
+Distances_Ham <- c()
+Distances_Jay <- c()
+for (i in 1:20) {
+  total <- total + 5
+  leave <- sample(1:nrow(y), 5)
+  leave1 <- y[leave,]
+  train <- y[-leave, ]
+  b.train <- b[-leave]
+  p <- prcomp(train)
+  l <- lda(as.matrix(train) %*% p$rotation[, 1:40], grouping=b.train)
+  w1 <- as.matrix(train) %*% p$rotation[, 1:40]
+  w2 <- as.matrix(leave1) %*% p$rotation[, 1:40]
+  ldata <- as.matrix(w1) %*% l$scaling[, 1:2]
+  ldata2 <- as.matrix(w2) %*% l$scaling[, 1:2]
+  Hamilton <- b.train %in% c("Hamilton")
+  Madison <- b.train %in% c("Madison")
+  Jay <- b.train %in% c("Jay")
+  # Recalculate distributions for each author based on new sample set
+  hamDist <- ldata[Hamilton,]
+  madDist <- ldata[Madison,]
+  jayDist <- ldata[Jay,]
+  # Calculate the mean vector for each author
+  for (i in 1:2) {
+    ham_mean <- c(mean(hamDist[,1]), mean(hamDist[,2]))
+    mad_mean <- c(mean(madDist[,1]), mean(madDist[,2]))
+    jay_mean <- c(mean(jayDist[,1]), mean(jayDist[,2]))
+  }
+  # Calculate the covariance matrix for each author
+  ham_cov <- cov(hamDist)
+  mad_cov <- cov(madDist)
+  jay_cov <- cov(jayDist)
+  actual_authors <- b[leave]
+  for (j in 1:length(actual_authors)) {
+    if (actual_authors[j] == "Hamilton") {
+      for (k in 1:nrow(ldata2)) {
+        Distances_Ham <- append(Distances_Ham,t(ldata2[k,]-ham_mean)%*%solve(ham_cov)%*%(ldata2[k,]-ham_mean))
+      }
+    }
+    if (actual_authors[j] == "Madison") {
+      for (k in 1:nrow(ldata2)) {
+        Distances_Mad <- append(Distances_Mad,t(ldata2[k,]-mad_mean)%*%solve(mad_cov)%*%(ldata2[k,]-mad_mean))
+      }
+    }
+    if (actual_authors[j] == "Jay") {
+      for (k in 1:nrow(ldata2)) {
+        DistancesJay <- append(DistancesJay,t(ldata2[k,]-jay_mean)%*%solve(jay_cov)%*%(ldata2[k,]-jay_mean))
+      }
+    }
+  }
+}
+
+
+# 'Distances_Ham,' 'Distances_Mad,' and 'Distances_Jay' are vectors of the squared Mahalanobis distances of test 
+# points with known authorship away from their actual clusters. 
+# These test poihts were ommitted in the creation of cluster mean and covariance paramters.
+
+
+mean(Distances)
+mean(Distances_Ham)
+mean(Distances_Mad)
+mean(DistancesJay)
+```
+The mean of squared Mahalanobis Distances for the papers with unknown authorship (Distances_Ham = 36.8; Distances_Mad = 62.7; Distances_Jay = 3099.7)- at least for the Hamilton and Madison distributions, are quite close to the mean of squared Mahalanobis Distances for the test set (7.4).  This gives me a high degree of confidence that the cross-validation results are generalizable, and that the PCA/LDA classification scheme is robust.
 
 
