@@ -295,7 +295,32 @@ p <- points(wu %*% l$scaling, col=5, pch="x", cex=2)
 points(wu %*% l$scaling, col=predict(l,wu)$class, cex=3)
 ```
 
-
+![rplot04](https://user-images.githubusercontent.com/43111524/52185691-15082380-27f0-11e9-9400-af9abb9dfa80.png)
 All 11 papers with unknown authorship are predicted by this methodology to have been written by James Madison
+
+Develop cross-validation method to assess the performance of this approach.  Cross-validation evaluates the method for preduction on omitted cases with known authorship:
+```R
+leave <- sample(1:nrow(y), 5)
+# The remaining papers become the training set
+train <- y[-leave, ]
+# Remove 'leave' authors from vector of authorship
+b.train <- b[-leave]
+# Perform pca on the training set
+p <- prcomp(train)
+# Perform lda on the training set
+l <- lda(as.matrix(train) %*% p$rotation[, 1:60], grouping=b.train)
+M <- p$rotation[, 1:60] %*% l$scaling[, 1:2]
+train.proj <- as.matrix(train) %*% M
+# Plot the resultant lda results (training set)
+plot(train.proj, col=b.train)
+# Create a test matrix, and multiply it by the output rotation of the pca/lda analysis
+test.proj <- as.matrix(y[leave, ]) %*% M
+# Plot the points of the test set colored by true authorship
+points(test.proj, col=b[leave], cex=2, pch="x")
+legend("topright", levels(b.train), text.col=1:length(b.train),
+       fill=1:length(levels(b.train)))
+# Plot the points of the test set colored by predicted authorship
+points(test.proj, col=predict(l, as.matrix(y[leave, ]) %*% p$rotation[, 1:60])$class, cex=3)
+```
 
 
