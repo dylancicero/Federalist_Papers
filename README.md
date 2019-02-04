@@ -182,7 +182,7 @@ y <- x[single, ]
 # Develop factors for the three single authors, to be used later in analytic charts
 b <- as.factor(as.character(a[single]))
 ```
-Conduct principle components analysis and plot the results
+Conduct principle components analysis and plot the results:
 ```R
 # PCA (note: prior to conducting pca, units of features should be normalized.  All units here are of the same type- relative
 # frequency- and thus scaling in this case has the undesired effect of reducing overall variance between data points)
@@ -200,6 +200,52 @@ legend("topleft", levels(b), text.col=1:length(levels(b)),
        fill=1:length(levels(b)))
 mtext("(means subtracted)", side = 3, adj = 0.5, line = 0.4)
 ```
+
+![rplot1](https://user-images.githubusercontent.com/43111524/52185457-cfe2f200-27ed-11e9-8497-a84776723205.png)
+The first two principle components are able to distinguish the authors with a little overlap. But we could do better...
+
+Conduct linear discriminant analysis:
+```R
+# LDA
+library(MASS)
+# The below (2) lines (commented out) demonstrate attempts to run lda on the full data set as well as on the first 20
+# features of the full data set.  Lda is unable to operate in these cases due to the sparsity of the data set.
+# absent <- which(apply(y, 2, var)==0)
+# y[, c(10,15, 34,35,39,56)] # test
+# x[, c(10,15, 34,35,39,56)] # test
+# z <- y[, -absent]
+# l <- lda(z, grouping=b)
+# l <- lda(z[, 1:20], grouping=b)
+# In order to run lda, we first perform pca, keeping only the first 40 principle components.
+w <- as.matrix(y) %*% p$rotation[, 1:40]
+# The resultant matrix 'w' is neither sparse nor too large.
+l <- lda(w, grouping=b)
+```
+Evaluate results of LDA.  LDA rotates the axes of the data such that the known groups will by optimally seperated. This could be misleading if a random labeling of the data partitions the data as well as the true labeling of the data.  To quickly contrast true and random labeling of the data, make a null lineup:
+```R
+par(mfrow = c(3, 3))
+answer <- sample(1:9, 1)
+for (i in 1:9) {
+  if (i == answer) {
+    # LDA for the original data
+    plot(as.matrix(w) %*% l$scaling[, 1:2], col=b)
+  } else {
+    # LDA with labels reassigned at random
+    B <- sample(b, length(b))
+    L <- lda(w, grouping=B)
+    plot(as.matrix(w) %*% L$scaling[, 1:2], col=B)
+  }
+}
+par(mfrow = c(1, 1))
+# Show the true plot alone
+plot(as.matrix(w) %*% l$scaling[, 1:2], col=b)
+legend("topright", levels(b), text.col=1:length(b),
+       fill=1:length(levels(b)))
+```
+![rplot](https://user-images.githubusercontent.com/43111524/52185457-cfe2f200-27ed-11e9-8497-a84776723205.png)
+It is obvious that plot #8 stands out from the rest.
+
+The true plot displayed alone
 
 
 
