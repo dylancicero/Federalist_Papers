@@ -276,7 +276,7 @@ legend("topright", levels(b), text.col=1:length(b),
        fill=1:length(levels(b)))
 ```
 ![rplot03](https://user-images.githubusercontent.com/43111524/52185618-50eeb900-27ef-11e9-9118-64ac734ff99b.png)
-Clusters are much tighter here!  The rest of this report proceeds evaluating this methodology.
+Clusters are much tighter here!  However, test cases (see below) perform better using only 40 principle components. The 40 pcp method will be evaluated from here on out. 
 
 Predicting true authorship of joint or unknown papers:
 ```R
@@ -300,6 +300,7 @@ All 11 papers with unknown authorship are predicted by this methodology to have 
 
 Develop cross-validation method to assess the performance of this approach.  Cross-validation evaluates the method for preduction on omitted cases with known authorship:
 ```R
+# Create a vector 'leave', comprised of 5 random paper samples of known authorship
 leave <- sample(1:nrow(y), 5)
 # The remaining papers become the training set
 train <- y[-leave, ]
@@ -308,8 +309,8 @@ b.train <- b[-leave]
 # Perform pca on the training set
 p <- prcomp(train)
 # Perform lda on the training set
-l <- lda(as.matrix(train) %*% p$rotation[, 1:60], grouping=b.train)
-M <- p$rotation[, 1:60] %*% l$scaling[, 1:2]
+l <- lda(as.matrix(train) %*% p$rotation[, 1:40], grouping=b.train)
+M <- p$rotation[, 1:40] %*% l$scaling[, 1:2]
 train.proj <- as.matrix(train) %*% M
 # Plot the resultant lda results (training set)
 plot(train.proj, col=b.train)
@@ -320,7 +321,31 @@ points(test.proj, col=b[leave], cex=2, pch="x")
 legend("topright", levels(b.train), text.col=1:length(b.train),
        fill=1:length(levels(b.train)))
 # Plot the points of the test set colored by predicted authorship
-points(test.proj, col=predict(l, as.matrix(y[leave, ]) %*% p$rotation[, 1:60])$class, cex=3)
+points(test.proj, col=predict(l, as.matrix(y[leave, ]) %*% p$rotation[, 1:40])$class, cex=3)
+```
+![rplot05](https://user-images.githubusercontent.com/43111524/52185732-7e883200-27f0-11e9-9281-044250d7e67f.png)
+All ommitted cases were assigned by the methodology to their correct class
+
+Implement the cross-validation method on numerous test cases.  85% of test cases that were correctly classified by the model 
+```R
+for (i in 1:100) {
+  total <- total + 5
+  leave <- sample(1:nrow(y), 5)
+  train <- y[-leave, ]
+  b.train <- b[-leave]
+  p <- prcomp(train)
+  l <- lda(as.matrix(train) %*% p$rotation[, 1:60], grouping=b.train)
+  predicted_authors <- predict(l, as.matrix(y[leave, ]) %*% p$rotation[, 1:60])$class
+  actual_authors <- b[leave]
+  for (j in 1:length(predicted_authors)) {
+    if (predicted_authors[j] == actual_authors[j]) {
+      correct <- correct + 1
+    }
+  }
+}
+# 'Confidence' is the proportion of test cases that were correctly classified by the model
+confidence <- correct/total
+print(confidence)
 ```
 
 
