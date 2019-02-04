@@ -242,11 +242,27 @@ plot(as.matrix(w) %*% l$scaling[, 1:2], col=b)
 legend("topright", levels(b), text.col=1:length(b),
        fill=1:length(levels(b)))
 ```
-![rplot](https://user-images.githubusercontent.com/43111524/52185457-cfe2f200-27ed-11e9-8497-a84776723205.png)
+![rplot](https://user-images.githubusercontent.com/43111524/52185569-cdcd6300-27ee-11e9-9bda-f45acc278a2e.png)
 It is obvious that plot #8 stands out from the rest.
 
+![rplot01](https://user-images.githubusercontent.com/43111524/52185572-d3c34400-27ee-11e9-96a0-5430ff889c22.png)
 The true plot displayed alone
 
-
+I based the LDA above off the first 40 principle components.  This raises an interesting question... What proportion of the variance is captured by each additional principle component?
+```R
+# Create a vector of the variance for each principle component
+ps <- p$sdev^2
+# Create another vector of same length and populate it with the sum of its variance and all prior pcs
+pss <- rep(NA, length(ps))
+pss[1] <- ps[1]
+pss
+for(i in 2:length(ps)) {
+  pss[i] <- pss[i-1] + ps[i]
+}
+#
+plot(1:length(ps), (pss/pss[length(pss)] * 100), 
+     main = "Percent of Total Variance Captured by Principle Components", 
+     xlab = "ith Principle Component", ylab = "Percent of Total Variance Captured", type = "b")
+```
 
 
