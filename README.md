@@ -1,6 +1,6 @@
 # Authorship Unknown? A Textual Analysis of the Federalist Papers
 
-### This analysis seeks to predict the true authors of the Federalist Papers where authorship is currenty contested.  Methods involve scraping the Federalist Papers from the web, consolidating them by authorship, evaluating the frequency of tokens by author, conducting principle components & linear discriminant analysis to generate predictions, and evaluating the confidence of results.  Results suggest with a high degree of confidence that all 11 Federalist Papers with currently contested authorship were in fact writted by James Madison. Below find my full set of code and commentary.
+This analysis seeks to predict the true authors of the Federalist Papers where authorship is currenty contested.  Methods involve scraping the Federalist Papers from the web, consolidating them by authorship, evaluating the frequency of tokens by author, conducting principle components & linear discriminant analysis to generate predictions, and evaluating the confidence of results.  Results suggest with a high degree of confidence that all 11 Federalist Papers with currently contested authorship were in fact writted by James Madison. Below find my full set of code and commentary.
 
 #### The first part of this analysis is written in Python:
 
@@ -201,7 +201,7 @@ legend("topleft", levels(b), text.col=1:length(levels(b)),
 mtext("(means subtracted)", side = 3, adj = 0.5, line = 0.4)
 ```
 
-![rplot1](https://user-images.githubusercontent.com/43111524/52185457-cfe2f200-27ed-11e9-8497-a84776723205.png)
+<img width="1051" alt="screen shot 2019-02-23 at 3 16 02 pm" src="https://user-images.githubusercontent.com/43111524/53291213-f0afbf00-377d-11e9-8f46-f073c09ff23c.png">
 The first two principle components are able to distinguish the authors with a little overlap. But we could do better...
 
 Conduct linear discriminant analysis:
@@ -242,10 +242,10 @@ plot(as.matrix(w) %*% l$scaling[, 1:2], col=b)
 legend("topright", levels(b), text.col=1:length(b),
        fill=1:length(levels(b)))
 ```
-![rplot](https://user-images.githubusercontent.com/43111524/52185569-cdcd6300-27ee-11e9-9bda-f45acc278a2e.png)
-It is obvious that plot #8 stands out from the rest.
+<img width="1052" alt="screen shot 2019-02-23 at 3 18 39 pm" src="https://user-images.githubusercontent.com/43111524/53291238-4b491b00-377e-11e9-8692-0cfb2ccdbe49.png">
+It is obvious that plot #4 stands out from the rest.
 
-![rplot01](https://user-images.githubusercontent.com/43111524/52185572-d3c34400-27ee-11e9-96a0-5430ff889c22.png)
+<img width="1052" alt="screen shot 2019-02-23 at 3 24 44 pm" src="https://user-images.githubusercontent.com/43111524/53291315-2ef9ae00-377f-11e9-8667-edfde31fb8ab.png">
 The true plot displayed alone
 
 I based the LDA above off the first 40 principle components.  This raises an interesting question... What proportion of the variance is captured by each additional principle component?
@@ -275,7 +275,7 @@ plot(as.matrix(w) %*% l$scaling[, 1:2], col=b)
 legend("topright", levels(b), text.col=1:length(b),
        fill=1:length(levels(b)))
 ```
-![rplot03](https://user-images.githubusercontent.com/43111524/52185618-50eeb900-27ef-11e9-9118-64ac734ff99b.png)
+<img width="1052" alt="screen shot 2019-02-23 at 3 26 18 pm" src="https://user-images.githubusercontent.com/43111524/53291327-f9a19000-377f-11e9-8276-6e9d24210865.png">
 Clusters are much tighter here!  However, test cases (see below) perform better using only 40 principle components. The 40 pcp method will be evaluated from here on out. 
 
 Predicting true authorship of joint or unknown papers:
@@ -295,10 +295,10 @@ p <- points(wu %*% l$scaling, col=5, pch="x", cex=2)
 points(wu %*% l$scaling, col=predict(l,wu)$class, cex=3)
 ```
 
-![rplot04](https://user-images.githubusercontent.com/43111524/52185691-15082380-27f0-11e9-9400-af9abb9dfa80.png)
+<img width="1052" alt="screen shot 2019-02-23 at 3 28 44 pm" src="https://user-images.githubusercontent.com/43111524/53291355-b810e500-377f-11e9-9761-522b4cc1f0ca.png">
 All 11 papers with unknown authorship are predicted by this methodology to have been written by James Madison
 
-Develop cross-validation method to assess the performance of this approach.  Cross-validation evaluates the method for preduction on omitted cases with known authorship:
+Develop cross-validation method to assess the performance of this approach.  Cross-validation evaluates the method for prediction on omitted cases with known authorship:
 ```R
 # Create a vector 'leave', comprised of 5 random paper samples of known authorship
 leave <- sample(1:nrow(y), 5)
@@ -323,10 +323,10 @@ legend("topright", levels(b.train), text.col=1:length(b.train),
 # Plot the points of the test set colored by predicted authorship
 points(test.proj, col=predict(l, as.matrix(y[leave, ]) %*% p$rotation[, 1:40])$class, cex=3)
 ```
-![rplot06](https://user-images.githubusercontent.com/43111524/52185862-b348b900-27f1-11e9-9055-703ba70abdd3.png)
+<img width="1052" alt="screen shot 2019-02-23 at 3 30 00 pm" src="https://user-images.githubusercontent.com/43111524/53291366-e8f11a00-377f-11e9-9791-e384ac98a44b.png">
 All ommitted cases were assigned by the methodology to their correct class
 
-Implement the cross-validation method on numerous test cases.  99.2% of test cases were correctly classified by the model 
+Implement the cross-validation method on numerous test cases.
 ```R
 for (i in 1:100) {
   total <- total + 5
@@ -347,7 +347,10 @@ for (i in 1:100) {
 confidence <- correct/total
 confidence
 ```
-In the final step, I assess the generalizability of the cross-validation results to classification of documents with unknown authorship.  Here, I evaluate the Mahalanobis distance of the predicted results for papers with unknown authorship against the mahalanobis distance of the predicted results for test cases:
+99.2% of test cases were correctly classified by the model 
+
+
+In the final step, I assess the generalizability of the cross-validation results to classification of documents with unknown authorship.  Here, I evaluate the Mahalanobis Distance of the predicted results for papers with unknown authorship against the Mahalanobis Distance of the predicted results for test cases.  If the difference in average Mahalanobis Distances is small, we could assume that the methodology is valid with high confidence:
 ```R
 # DETERMINE THE MEAN VECTOR AND COVARIANCE MATRIX SIGMA FROM EACH  OF THE SAMPLE DISTRIBUTIONS
 # Isolate the 2D data points (LD1, LD2) for each author
@@ -457,5 +460,9 @@ mean(Distances_Mad)
 mean(DistancesJay)
 ```
 The mean of squared Mahalanobis Distances for the papers with unknown authorship (Distances_Ham = 36.8; Distances_Mad = 62.7; Distances_Jay = 3099.7)- at least for the Hamilton and Madison distributions, are quite close to the mean of squared Mahalanobis Distances for the test set (7.4).  This gives me a high degree of confidence that the cross-validation results are generalizable, and that the PCA/LDA classification scheme is robust.
+
+#### Conclusion
+The Federalist Papers with contested authorship were almost certainly written by James Madison!
+
 
 
