@@ -462,7 +462,7 @@ mean(DistancesJay)
 The mean of squared Mahalanobis Distances for the papers with unknown authorship (Distances_Ham = 36.8; Distances_Mad = 62.7; Distances_Jay = 3099.7)- at least for the Hamilton and Madison distributions, are quite close to the mean of squared Mahalanobis Distances for the test set (7.4).  This gives me a high degree of confidence that the cross-validation results are generalizable, and that the PCA/LDA classification scheme is robust.
 
 #### Conclusion
-The Federalist Papers with contested authorship were almost certainly written by James Madison!
+All 11 Federalist Papers with contested authorship were almost certainly written by James Madison!
 
 
 
