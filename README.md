@@ -243,7 +243,7 @@ legend("topright", levels(b), text.col=1:length(b),
        fill=1:length(levels(b)))
 ```
 <img width="1052" alt="screen shot 2019-02-23 at 3 18 39 pm" src="https://user-images.githubusercontent.com/43111524/53291238-4b491b00-377e-11e9-8692-0cfb2ccdbe49.png">
-It is obvious that plot #4 stands out from the rest.
+It is obvious that plot #6 stands out from the rest.
 
 <img width="1052" alt="screen shot 2019-02-23 at 3 24 44 pm" src="https://user-images.githubusercontent.com/43111524/53291315-2ef9ae00-377f-11e9-8667-edfde31fb8ab.png">
 The true plot displayed alone
